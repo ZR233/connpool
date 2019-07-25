@@ -63,7 +63,6 @@ func (p *Pool) Get() (conn Connection, err error) {
 			p.Unlock()
 			return
 		}
-
 		p.numOpen++
 		p.Unlock()
 		return
