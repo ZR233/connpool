@@ -14,6 +14,7 @@ var (
 	ErrTimeOut     = errors.New("timeout")
 	ErrCapZero     = errors.New("cap不能小于0")
 	ErrTimeOutZero = errors.New("connTimeOut不能小于0")
+	ErrPoolClose   = errors.New("pool已关闭")
 )
 
 type Connection interface {
@@ -70,10 +71,12 @@ func (p *Pool) Get() (conn Connection, err error) {
 	p.Unlock()
 
 	select {
-	case conn, err = <-p.conns:
+	case conn, ok := <-p.conns:
 		{
-			if err != nil {
-				return nil, ErrTimeOut
+			if ok {
+				return conn, nil
+			} else {
+				return nil, ErrPoolClose
 			}
 		}
 	case <-time.After(p.connTimeOut):
@@ -81,7 +84,6 @@ func (p *Pool) Get() (conn Connection, err error) {
 			return nil, ErrTimeOut
 		}
 	}
-	return
 }
 
 func (p *Pool) Put(conn Connection) {
